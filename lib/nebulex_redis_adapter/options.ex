@@ -6,7 +6,7 @@ defmodule NebulexRedisAdapter.Options do
   # Start option definitions (runtime)
   start_opts_defs = [
     mode: [
-      type: {:in, [:standalone, :redis_cluster, :client_side_cluster]},
+      type: {:in, [:standalone, :redis_cluster, :client_side_cluster, :sentinel]},
       required: false,
       default: :standalone,
       doc: """
@@ -20,6 +20,9 @@ defmodule NebulexRedisAdapter.Options do
           module documentation for more options.
         * `:client_side_cluster` - See the
           ["Client-side Cluster"](#module-client-side-cluster) section in the
+          module documentation for more options.
+          * `:sentinel` - See the
+          ["Sentinel"](#module-sentinel) section in the
           module documentation for more options.
 
       """
@@ -200,6 +203,52 @@ defmodule NebulexRedisAdapter.Options do
           """
         ]
       ]
+    ],
+    sentinel: [
+      type: {:custom, __MODULE__, :validate_non_empty_sentinel_opts, [:sentinel]},
+      required: false,
+      doc: """
+      Required only when `:mode` is set to `:client_side_cluster`. A keyword
+      list of options.
+
+      See ["Client-side Cluster options"](#module-client-side-cluster-options)
+      section below.
+      """,
+      subsection: """
+      ### Client-side Cluster options
+
+      The available options are:
+      sentinel: [
+        sentinels: [
+          [
+            host: System.get_env("REDIS_SENTINEL_SERVICE_URL"),
+            port: System.get_env("REDIS_SENTINEL_PORT") |> String.to_integer()
+          ]
+        ],
+        group: System.get_env("REDIS_SENTINEL_SERVICE_NAME")
+      ]
+      """,
+      keys: [
+        group: [
+          type: :string,
+          required: false,
+          doc: """
+          Group.
+          """
+        ],
+        sentinels: [
+          type: {:list, {:keyword_list, host: [type: :string], port: [type: :integer]}},
+          required: true,
+          doc: """
+          A keyword list of named sentinels where the key is an atom as
+          an identifier and the value is another keyword list of options
+          (same as `:conn_opts`).
+
+          See ["Sentinel"](#module-sentinel)
+          for more information.
+          """,
+        ]
+      ]
     ]
   ]
 
@@ -262,6 +311,14 @@ defmodule NebulexRedisAdapter.Options do
 
   @doc false
   def validate_non_empty_cluster_opts(value, mode) do
+    if keyword_list?(value) and value != [] do
+      {:ok, value}
+    else
+      {:error, invalid_cluster_config_error(value, mode)}
+    end
+  end
+
+  def validate_non_empty_sentinel_opts(value, mode) do
     if keyword_list?(value) and value != [] do
       {:ok, value}
     else
