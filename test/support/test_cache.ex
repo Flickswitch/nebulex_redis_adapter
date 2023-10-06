@@ -22,6 +22,13 @@ defmodule NebulexRedisAdapter.TestCache do
       adapter: NebulexRedisAdapter
   end
 
+  defmodule Sentinel do
+    @moduledoc false
+    use Nebulex.Cache,
+      otp_app: :nebulex_redis_adapter,
+      adapter: NebulexRedisAdapter
+  end
+
   defmodule RedisClusterConnError do
     @moduledoc false
     use Nebulex.Cache,

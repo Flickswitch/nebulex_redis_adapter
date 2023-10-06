@@ -50,6 +50,18 @@ config :nebulex_redis_adapter, NebulexRedisAdapter.TestCache.RedisCluster,
     override_master_host: true
   ]
 
+config :nebulex_redis_adapter, NebulexRedisAdapter.TestCache.Sentinel,
+  mode: :sentinel,
+  sentinel: [
+    sentinels: [
+      [
+        host: "127.0.0.1",
+        port: 26379
+      ]
+    ],
+    group: "main"
+  ]
+
 # Redis Cluster mode with errors
 config :nebulex_redis_adapter, NebulexRedisAdapter.TestCache.RedisClusterConnError,
   mode: :redis_cluster,

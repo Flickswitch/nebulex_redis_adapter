@@ -103,6 +103,30 @@ defmodule NebulexRedisAdapter do
           ]
         ]
 
+  ## Sentinel
+
+  We can define a cache with "sentinel mode" as follows:
+
+      defmodule MyApp.ClusteredCache do
+        use Nebulex.Cache,
+          otp_app: :nebulex,
+          adapter: NebulexRedisAdapter
+      end
+
+  The config:
+
+      config :my_app, MyApp.ClusteredCache,
+        mode: :sentinel,
+          sentinel: [
+            sentinels: [
+              [
+                host: "127.0.0.1",
+                port: 26379
+              ]
+            ],
+            group: "TEST"
+          ]
+
   ## Configuration options
 
   In addition to `Nebulex.Cache` config options, the adapter supports the
@@ -366,7 +390,8 @@ defmodule NebulexRedisAdapter do
     Command,
     Connection,
     Options,
-    RedisCluster
+    RedisCluster,
+    Sentinel
   }
 
   ## Nebulex.Adapter
@@ -509,6 +534,10 @@ defmodule NebulexRedisAdapter do
 
   defp do_init(%{mode: :client_side_cluster} = adapter_meta, opts) do
     ClientCluster.init(adapter_meta, opts)
+  end
+
+  defp do_init(%{mode: :sentinel} = adapter_meta, opts) do
+    Sentinel.init(adapter_meta, opts)
   end
 
   ## Nebulex.Adapter.Entry
@@ -874,6 +903,10 @@ defmodule NebulexRedisAdapter do
 
   defp exec!(:redis_cluster, args, extra_args) do
     apply(RedisCluster, :exec!, args ++ extra_args)
+  end
+
+  defp exec!(:sentinel, args, _extra_args) do
+    apply(Command, :exec!, args)
   end
 
   defp group_keys_by_hash_slot(enum, %{

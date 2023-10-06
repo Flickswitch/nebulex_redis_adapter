@@ -122,6 +122,14 @@ defmodule NebulexRedisAdapter.Command do
     Pool.get_conn(registry, name, pool_size)
   end
 
+  defp conn(
+         %{mode: :sentinel, name: name, registry: registry, pool_size: pool_size},
+         _key,
+         _opts
+       ) do
+    Pool.get_conn(registry, name, pool_size)
+  end
+
   defp conn(%{mode: :redis_cluster, name: name} = meta, key, opts) do
     with nil <- RedisCluster.get_conn(meta, key, opts) do
       # Perhars the cluster has to be re-configured again
